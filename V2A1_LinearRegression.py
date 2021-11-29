@@ -24,7 +24,7 @@ def phi_polynomial(x,deg=1):                            # compute polynomial bas
 
 # (I) generate data 
 np.random.seed(10)                            # set seed of random generator (to be able to regenerate data)
-N=10                                          # number of data samples
+N=5                                     # number of data samples
 xmin,xmax=-5.0,5.0                            # x limits
 sd_noise=10                                   # standard deviation of Guassian noise
 X,T           = generateDataSet(N, xmin,xmax, sd_noise)             # generate training data
@@ -33,18 +33,22 @@ print("X=",X, "T=",T)
 
 # (II) generate linear least squares model for regression
 lmbda=0                                                           # no regression
-deg=5                                                             # degree of polynomial basis functions
+deg=2                                                             # degree of polynomial basis functions
 N,D = np.shape(X)                                                 # shape of data matrix X
 N,K = np.shape(T)                                                 # shape of target value matrix T
 PHI = np.array([phi_polynomial(X[i],deg).T for i in range(N)])    # generate design matrix
 N,M = np.shape(PHI)                                               # shape of design matrix
 print("PHI=", PHI)
-W_LSR = np.zeros((M,1))                                           # REPLACE THIS BY REGULARIZED LEAST SQUARES WEIGHTS!  
+
+PHITPHI_lambdaI_inv = np.linalg.inv(np.dot(np.transpose(PHI),PHI)+lmbda*np.eye(M))
+W_LSR = np.dot(np.dot(PHITPHI_lambdaI_inv,np.transpose(PHI)),T)                     # opt. LSR weights
 print("W_LSR=",W_LSR)
 
 # (III) make predictions for training and test data
-Y_train = np.zeros((N,1))  # REPLACE THIS BY PROGNOSIS FOR TRAINING DATA X! (result should be N x 1 matrix, i.e., one prognosis per row)
-Y_test = np.zeros((N,1))   # REPLACE THIS BY PROGNOSIS FOR TEST DATA X_test! (result should be N x 1 matrix, i.e., one prognosis per row)
+
+Y_train = np.array([W_LSR.T @ phi_polynomial(X[i], deg) for i in range(N)])
+Y_test = np.array([W_LSR.T @ phi_polynomial(X_test[i], deg) for i in range(N)])
+
 print("Y_test=",Y_test)
 print("T_test=",T_test)
 print("training data error = ", getDataError(Y_train,T))

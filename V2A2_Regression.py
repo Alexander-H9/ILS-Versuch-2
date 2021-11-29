@@ -296,7 +296,7 @@ class KNNRegressifier(Regressifier):
             t_out=np.mean([self.T[i] for i in idxNN])
         else:
             # do a linear regression of the KNNs
-            lsr=LSRegressifier(lmbda=0.0001,phi=lambda x:phi_polynomial(x,1),flagSTD=1)
+            lsr=LSRRegressifier(lmbda=0.0001,phi=lambda x:phi_polynomial(x,1),flagSTD=1)
             lsr.fit(self.X[idxNN],self.T[idxNN])
             t_out=lsr.predict(x)
         return t_out
