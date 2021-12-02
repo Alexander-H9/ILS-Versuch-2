@@ -24,7 +24,7 @@ def phi_polynomial(x,deg=1):                            # compute polynomial bas
 
 # (I) generate data 
 np.random.seed(10)                            # set seed of random generator (to be able to regenerate data)
-N=5                                     # number of data samples
+N=10                                           # number of data samples
 xmin,xmax=-5.0,5.0                            # x limits
 sd_noise=10                                   # standard deviation of Guassian noise
 X,T           = generateDataSet(N, xmin,xmax, sd_noise)             # generate training data
@@ -32,8 +32,8 @@ X_test,T_test = generateDataSet(N, xmin,xmax, sd_noise)             # generate t
 print("X=",X, "T=",T)
 
 # (II) generate linear least squares model for regression
-lmbda=0                                                           # no regression
-deg=2                                                             # degree of polynomial basis functions
+lmbda=10                                                         # no regression
+deg=9                                                             # degree of polynomial basis functions
 N,D = np.shape(X)                                                 # shape of data matrix X
 N,K = np.shape(T)                                                 # shape of target value matrix T
 PHI = np.array([phi_polynomial(X[i],deg).T for i in range(N)])    # generate design matrix
@@ -46,8 +46,8 @@ print("W_LSR=",W_LSR)
 
 # (III) make predictions for training and test data
 
-Y_train = np.array([W_LSR.T @ phi_polynomial(X[i], deg) for i in range(N)])
-Y_test = np.array([W_LSR.T @ phi_polynomial(X_test[i], deg) for i in range(N)])
+Y_train = np.array([W_LSR.T @ phi_polynomial(X[i], deg) for i in range(N)])             # a*b == punktweise multiplikation
+Y_test = np.array([W_LSR.T @ phi_polynomial(X_test[i], deg) for i in range(N)])         # a @ b = matrix multiplikation
 
 print("Y_test=",Y_test)
 print("T_test=",T_test)

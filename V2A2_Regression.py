@@ -137,6 +137,7 @@ class DataScaler:
 # function to compute polynomial basis functions 
 # ----------------------------------------------------------------------------------------- 
 def phi_polynomial(x,deg=1):           # x should be list or np.array or 1xD matrix; returns an 1xM matrix 
+                                        # ([x1,x2],2) = [1, x1, x2, x1^2, 2x2, x2^2]
     """
     polynomial basis function vector; may be used to transform a data vector x into a feature vector phi(x) having polynomial basis function components
     :param x: data vector to be transformed into a feature vector
@@ -146,9 +147,9 @@ def phi_polynomial(x,deg=1):           # x should be list or np.array or 1xD mat
     """
     x=np.array(np.mat(x))[0]           # ensure that x is a 1D array (first row of x)
     D=len(x)
-    assert (D==1) or ((D>1) and (deg<=3)), "phi_polynomial(x,deg) not implemented for D="+str(D)+" and deg="+str(deg)    # MODIFY CODE HERE FOR deg>3 !!!!
+    assert (D==1) or ((D>1) and (deg<=5)), "phi_polynomial(x,deg) not implemented for D="+str(D)+" and deg="+str(deg)
     if(D==1):
-        phi = np.array([x[0]**i for i in range(deg+1)])
+        phi = np.array([x[0]**i for i in range(deg+1)])     # vevtor filled with 0 depending of the deg
     else:
         phi = np.array([])
         if(deg>=0):
@@ -162,7 +163,18 @@ def phi_polynomial(x,deg=1):           # x should be list or np.array or 1xD mat
                         for i in range(D):
                             for j in range(i+1):
                                 phi = np.concatenate(( phi, [x[i]*x[j]*x[k] for k in range(j+1)] ))   # include degree 3 terms
-                        # EXTEND CODE HERE FOR deg>3!!!!
+                        if (deg>=4):
+                            for i in range(D):
+                                for j in range(i+1):
+                                    for k in range(j+1):
+                                        phi = np.concatenate(( phi, [x[i]*x[j]*x[k]*x[m] for m in range(k+1)] ))
+                            if (deg>=5):
+                                for i in range(D):
+                                    for j in range(i+1):
+                                        for k in range(j+1):
+                                            for m in range(k+1):
+                                                phi = np.concatenate(( phi, [x[i]*x[j]*x[k]*x[m]*x[n] for n in range(k+1)] ))
+
     return phi.T  # return basis function vector (=feature vector corresponding to data vector x)
 
 
@@ -215,8 +227,9 @@ class LSRRegressifier(Regressifier):
             self.N,self.D = X.shape            # data matrix X has size N x D (N is number of data vectors, D is dimension of a vector)
             self.M = self.phi(self.D*[0]).size # get number of basis functions  
             self.K = T.shape[1]                # DELTE dummy code (just required for dummy code in predict(.): number of output dimensions
-            PHI = None                         # REPLACE dummy code: compute design matrix
-            PHIT_PHI_lmbdaI = None             # REPLACE dummy code: compute PHI_T*PHI+lambda*I
+            PHI = np.array([phi_polynomial(X[i],deg).T for i in range(N)])                         # REPLACE dummy code: compute design matrix
+            
+            PHIT_PHI_lmbdaI = PHI.T*PHI+lmbda             # REPLACE dummy code: compute PHI_T*PHI+lambda*I
             PHIT_PHI_lmbdaI_inv = None         # REPLACE dummy code: compute inverse matrix (may be bad conditioned and fail)
             self.W_LSR = None                  # REPLACE dummy code: compute regularized least squares weights 
             # (iv) check numerical condition
@@ -357,5 +370,3 @@ if __name__ == '__main__':
     # do S-fold crossvalidation
     err_abs,err_rel = knnr.crossvalidate(S,X,T)
     print("KNNRegression cross-validation: absolute errors (E,sd,min,max)=", err_abs, "  relative errors (E,sd,min,max)=", err_rel)
-
-
