@@ -226,18 +226,22 @@ class LSRRegressifier(Regressifier):
         try:
             self.N,self.D = X.shape            # data matrix X has size N x D (N is number of data vectors, D is dimension of a vector)
             self.M = self.phi(self.D*[0]).size # get number of basis functions  
-            self.K = T.shape[1]                # DELTE dummy code (just required for dummy code in predict(.): number of output dimensions
-            PHI = np.array([phi_polynomial(X[i],deg).T for i in range(N)])                         # REPLACE dummy code: compute design matrix
-            
-            PHIT_PHI_lmbdaI = PHI.T*PHI+lmbda             # REPLACE dummy code: compute PHI_T*PHI+lambda*I
-            PHIT_PHI_lmbdaI_inv = None         # REPLACE dummy code: compute inverse matrix (may be bad conditioned and fail)
-            self.W_LSR = None                  # REPLACE dummy code: compute regularized least squares weights 
+            self.K = T.shape[0]                # DELTE dummy code (just required for dummy code in predict(.): number of output dimensions
+
+            I = np.identity(self.M)
+            PHI = np.array([self.phi(X[i]).T for i in range(self.N)])       # !REPLACED! dummy code: compute design matrix
+            PHIT_PHI_lmbdaI = PHI.T @ PHI + lmbda * I                       # !REPLACED! dummy code: compute PHI_T*PHI+lambda*I
+            PHIT_PHI_lmbdaI_inv = np.linalg.inv(PHIT_PHI_lmbdaI)            # !REPLACED! dummy code: compute inverse matrix (may be bad conditioned and fail)
+            self.W_LSR = PHIT_PHI_lmbdaI_inv @ PHI.T @ T                    # !REPLACED! dummy code: compute regularized least squares weights
+
             # (iv) check numerical condition
-            Z=None                             # REPLACE dummy code: Compute Z:=PHIT_PHI_lmbdaI*PHIT_PHI_lmbdaI_inv-I which should become the zero matrix if good conditioned!
-            maxZ = 0                           # REPLACE dummy code: Compute maximum (absolute) componente of matrix Z (should be <eps for good conditioned problem)
-            assert maxZ<=self.eps              # maxZ should be <eps for good conditioned problems (otherwise the result cannot be trusted!!!)
+            Z = PHIT_PHI_lmbdaI @ PHIT_PHI_lmbdaI_inv - I                   # !REPLACED! dummy code: Compute Z:=PHIT_PHI_lmbdaI*PHIT_PHI_lmbdaI_inv-I which should become the zero matrix if good conditioned!
+            maxZ = np.amax(np.absolute(Z))                                  # REPLACE dummy code: Compute maximum (absolute) componente of matrix Z (should be <eps for good conditioned problem)
+            print("maxZ: ", maxZ)
+
+            assert maxZ<=self.eps                                           # maxZ should be <eps for good conditioned problems (otherwise the result cannot be trusted!!!)
         except: 
-            flagOK=0;
+            flagOK=0
             print("EXCEPTION DUE TO BAD CONDITION:flagOK=", flagOK, " maxZ=", maxZ)
             raise
         return flagOK 
@@ -252,7 +256,9 @@ class LSRRegressifier(Regressifier):
         if flagSTD==None: flagSTD=self.flagSTD      # standardization?
         if flagSTD>0: x=self.datascalerX.scale(x)   # if yes, then scale x before computing the prediction!
         phi_of_x = self.phi(x)                      # compute feature vector phi_of_x for data vector x
-        y=np.zeros((1,self.K)).T                    # REPLACE dummy code:  compute prediction y for data vector x 
+
+        y = np.array([self.W_LSR.T @ phi_of_x])
+        
         if flagSTD>0: y=self.datascalerT.unscale(y) # scale prediction back to original range?
         return y                  # return prediction y for data vector x
 
@@ -362,7 +368,7 @@ if __name__ == '__main__':
     print("\n-----------------------------------------")
     print("Do a KNN-Regression")
     print("-----------------------------------------")
-    K=5;
+    K=2;
     knnr = KNNRegressifier(K)
     knnr.fit(X,T)
     print("prediction of x=",x,"is y=",knnr.predict(x))
